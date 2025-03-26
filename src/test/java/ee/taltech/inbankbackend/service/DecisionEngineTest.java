@@ -32,8 +32,8 @@ class DecisionEngineTest {
         segment1PersonalCode = "49002010976";    // Segment 1, age 35, creditModifier = 100
         segment2PersonalCode = "49002010987";    // Segment 2, age 35, creditModifier = 300
         segment3PersonalCode = "49002010998";    // Segment 3, age 35, creditModifier = 1000
-        underagePersonalCode = "50803252747";    // Age 17, creditModifier = 100
-        overagePersonalCode = "35803250747";     // Age 67, creditModifier = 100
+        underagePersonalCode = "50803252747";    // Age 17
+        overagePersonalCode = "35803250747";     // Age 67
     }
 
     @Test
