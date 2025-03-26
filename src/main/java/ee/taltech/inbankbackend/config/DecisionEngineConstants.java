@@ -14,4 +14,8 @@ public class DecisionEngineConstants {
     public static final int SEGMENT_1_CREDIT_MODIFIER = 100;
     public static final int SEGMENT_2_CREDIT_MODIFIER = 300;
     public static final int SEGMENT_3_CREDIT_MODIFIER = 1000;
+    public static final int EXPECTED_LIFETIME = 70;
+    public static final int MAX_AGE = EXPECTED_LIFETIME - MAXIMUM_LOAN_PERIOD / 12;
+    public static final int MIN_AGE = 18;
+
 }

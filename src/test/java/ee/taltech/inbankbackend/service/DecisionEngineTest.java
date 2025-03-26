@@ -17,23 +17,30 @@ class DecisionEngineTest {
     @InjectMocks
     private DecisionEngine decisionEngine;
 
+    // Основные коды для сегментов
     private String debtorPersonalCode;
     private String segment1PersonalCode;
     private String segment2PersonalCode;
     private String segment3PersonalCode;
+    // Коды для проверки возраста
+    private String underagePersonalCode;
+    private String overagePersonalCode;
 
     @BeforeEach
     void setUp() {
-        debtorPersonalCode = "49002010965";  // Debt, creditModifier = 0
-        segment1PersonalCode = "49002010976"; // Segment 1, creditModifier = 100
-        segment2PersonalCode = "49002010987"; // Segment 2, creditModifier = 300
-        segment3PersonalCode = "49002010998"; // Segment 3, creditModifier = 1000
+        debtorPersonalCode = "49002010965";      // Debt, age 35, creditModifier = 0
+        segment1PersonalCode = "49002010976";    // Segment 1, age 35, creditModifier = 100
+        segment2PersonalCode = "49002010987";    // Segment 2, age 35, creditModifier = 300
+        segment3PersonalCode = "49002010998";    // Segment 3, age 35, creditModifier = 1000
+        underagePersonalCode = "50803252747";    // Age 17
+        overagePersonalCode = "35803250747";     // Age 67
     }
 
     @Test
     void testDebtorPersonalCode_throwsNoValidLoanException() {
         assertThrows(NoValidLoanException.class,
-                () -> decisionEngine.calculateApprovedLoan(debtorPersonalCode, 4000L, 12));
+                () -> decisionEngine.calculateApprovedLoan(debtorPersonalCode, 4000L, 12),
+                "No valid loan found due to debt!");
     }
 
     @Test
@@ -55,6 +62,20 @@ class DecisionEngineTest {
         Decision decision = decisionEngine.calculateApprovedLoan(segment3PersonalCode, 4000L, 12);
         assertEquals(10000, decision.loanAmount());
         assertEquals(12, decision.loanPeriod());
+    }
+
+    @Test
+    void testUnderagePersonalCode_throwsNoValidLoanException() {
+        assertThrows(NoValidLoanException.class,
+                () -> decisionEngine.calculateApprovedLoan(underagePersonalCode, 4000L, 12),
+                "Customer is underage (age 17)!");
+    }
+
+    @Test
+    void testOveragePersonalCode_throwsNoValidLoanException() {
+        assertThrows(NoValidLoanException.class,
+                () -> decisionEngine.calculateApprovedLoan(overagePersonalCode, 4000L, 12),
+                "Customer exceeds maximum age limit (age 67, max 66)!");
     }
 
     @Test

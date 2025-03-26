@@ -15,6 +15,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
+
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -81,6 +82,34 @@ class DecisionEngineControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.loanAmount").value(4000))
                 .andExpect(jsonPath("$.loanPeriod").value(40));
+    }
+
+    @Test
+    void givenUnderageRequest_whenRequestDecision_thenReturnsNotFound() throws Exception {
+        when(decisionEngine.calculateApprovedLoan("50803252747", 4000L, 12))
+                .thenThrow(new NoValidLoanException("Customer is underage (age 17)!"));
+
+        DecisionRequest request = new DecisionRequest("50803252747", 4000L, 12);
+
+        mockMvc.perform(post("/loan/decision")
+                        .content(objectMapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorMessage").value("Customer is underage (age 17)!"));
+    }
+
+    @Test
+    void givenOverageRequest_whenRequestDecision_thenReturnsNotFound() throws Exception {
+        when(decisionEngine.calculateApprovedLoan("35803250747", 4000L, 12))
+                .thenThrow(new NoValidLoanException("Customer exceeds maximum age limit (age 67, max 66)!"));
+
+        DecisionRequest request = new DecisionRequest("35803250747", 4000L, 12);
+
+        mockMvc.perform(post("/loan/decision")
+                        .content(objectMapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorMessage").value("Customer exceeds maximum age limit (age 67, max 66)!"));
     }
 
     @Test
