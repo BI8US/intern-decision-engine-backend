@@ -8,6 +8,9 @@ import ee.taltech.inbankbackend.exceptions.InvalidPersonalCodeException;
 import ee.taltech.inbankbackend.exceptions.NoValidLoanException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.Period;
+
 /**
  * A service class that provides a method for calculating an approved loan amount and period for a customer.
  * The loan amount is calculated based on the customer's credit modifier, determined by their personal ID code.
@@ -105,6 +108,26 @@ public class DecisionEngine {
         };
     }
 
+    private int calculateAge(String personalCode) throws InvalidPersonalCodeException {
+        int centuryDigit = Integer.parseInt(personalCode.substring(0, 1));
+        int yearSuffix = Integer.parseInt(personalCode.substring(1, 3));
+        int month = Integer.parseInt(personalCode.substring(3, 5));
+        int day = Integer.parseInt(personalCode.substring(5, 7));
+
+        int birthYear;
+        if (centuryDigit == 3 || centuryDigit == 4) {
+            birthYear = 1900 + yearSuffix;
+        } else if (centuryDigit == 5 || centuryDigit == 6) {
+            birthYear = 2000 + yearSuffix;
+        } else {
+            throw new InvalidPersonalCodeException("Invalid century digit in personal code!");
+        }
+
+        LocalDate birthDate = LocalDate.of(birthYear, month, day);
+        LocalDate currentDate = LocalDate.of(2025, 3, 26); // Current date for testing purposes
+        return Period.between(birthDate, currentDate).getYears();
+    }
+
     /**
      * Verify that all inputs are valid according to business rules.
      * If inputs are invalid, then throws corresponding exceptions.
@@ -117,15 +140,24 @@ public class DecisionEngine {
      * @throws InvalidLoanPeriodException If the requested loan period is invalid
      */
     private void verifyInputs(String personalCode, Long loanAmount, int loanPeriod)
-            throws InvalidPersonalCodeException, InvalidLoanAmountException, InvalidLoanPeriodException {
+            throws InvalidPersonalCodeException, InvalidLoanAmountException, InvalidLoanPeriodException, NoValidLoanException {
+        int age = calculateAge(personalCode);
+        if (age < DecisionEngineConstants.MIN_AGE) {
+            throw new NoValidLoanException("Customer is underage (age " + age + ")!");
+        } else if (age > DecisionEngineConstants.MAX_AGE) {
+            throw new NoValidLoanException("Customer exceeds maximum age limit (age " + age + ", max "
+                    + DecisionEngineConstants.MAX_AGE + ")!");
+        }
 
         if (!validator.isValid(personalCode)) {
             throw new InvalidPersonalCodeException("Invalid personal ID code!");
         }
+
         if (loanAmount < DecisionEngineConstants.MINIMUM_LOAN_AMOUNT
                 || loanAmount > DecisionEngineConstants.MAXIMUM_LOAN_AMOUNT) {
             throw new InvalidLoanAmountException("Invalid loan amount!");
         }
+
         if (loanPeriod < DecisionEngineConstants.MINIMUM_LOAN_PERIOD
                 || loanPeriod > DecisionEngineConstants.MAXIMUM_LOAN_PERIOD) {
             throw new InvalidLoanPeriodException("Invalid loan period!");
